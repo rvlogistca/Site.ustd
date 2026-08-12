@@ -249,5 +249,79 @@ window.addEventListener('resize',function(){draw()});
   }catch(e){}
 })();
 </script>
-</body>
+</body><!-- SALDOS AO VIVO -->
+<div style="background:#0f172a; color:#fff; padding:20px; border-radius:16px; margin-top:30px; font-family:Arial,sans-serif;">
+  <h3 style="text-align:center; color:#22d3ee; margin:0 0 15px 0;">🛡️ DADOS DO FUNDO DE GARANTIA</h3>
+
+  <div style="background:#1e293b; padding:12px; border-radius:10px; margin-bottom:10px;">
+    <div style="font-size:12px; color:#94a3b8; margin-bottom:4px;">Carteira de Reserva</div>
+    <div style="font-size:10px; color:#cbd5e1; word-break:break-all; margin-bottom:8px;">0x97b9D2102A9a65A26E1EE82D59e42d1B73B68689</div>
+    <div style="font-size:20px; font-weight:bold; color:#4ade80;" id="eth-reserva">Carregando...</div>
+    <div style="font-size:16px; color:#4ade80; margin-top:4px;" id="usdt-reserva">Carregando...</div>
+  </div>
+
+  <div style="background:#1e293b; padding:12px; border-radius:10px;">
+    <div style="font-size:12px; color:#94a3b8; margin-bottom:4px;">Supply Total USTD</div>
+    <div style="font-size:20px; font-weight:bold; color:#facc15;" id="supply-ustd">Carregando...</div>
+  </div>
+
+  <button onclick="atualizarTudo()" style="width:100%; margin-top:12px; padding:10px; background:#22d3ee; color:#000; border:none; border-radius:10px; font-weight:bold; cursor:pointer;">🔄 Atualizar Saldos</button>
+</div>
+
+<script>
+const API_KEY = ""; // Coloque sua chave Etherscan aqui depois
+const RESERVA = "0x97b9D2102A9a65A26E1EE82D59e42d1B73B68689";
+const USDT_CONTRACT = "0xdAC17F958D2ee523a2206206994597C13D831ec7";
+const USTD_CONTRACT = "0x4644E1113FE1a6bA831D85cc4772b3D0c23DE655";
+
+async function getEthBalance(endereco){
+  let url = `https://api.etherscan.io/api?module=account&action=balance&address=${endereco}&tag=latest`;
+  if(API_KEY) url += `&apikey=${API_KEY}`;
+  try{
+    let r = await fetch(url);
+    let j = await r.json();
+    if(j.status==="1") return (BigInt(j.result)/10n**18n).toFixed(4) + " ETH";
+  }catch(e){return "Sem conexão"}
+  return "Indisponível";
+}
+
+async function getTokenBalance(contract, endereco, dec=6){
+  let url = `https://api.etherscan.io/api?module=account&action=tokenbalance&contractaddress=${contract}&address=${endereco}&tag=latest`;
+  if(API_KEY) url += `&apikey=${API_KEY}`;
+  try{
+    let r = await fetch(url);
+    let j = await r.json();
+    if(j.status==="1") return "$ " + (BigInt(j.result)/BigInt(10**dec)).toLocaleString('pt-BR',{minimumFractionDigits:2});
+  }catch(e){return "Sem conexão"}
+  return "Indisponível";
+}
+
+async function getTotalSupply(contract, dec=18){
+  let url = `https://api.etherscan.io/api?module=stats&action=tokensupply&contractaddress=${contract}`;
+  if(API_KEY) url += `&apikey=${API_KEY}`;
+  try{
+    let r = await fetch(url);
+    let j = await r.json();
+    if(j.status==="1") return (BigInt(j.result)/BigInt(10**dec)).toLocaleString('pt-BR',{minimumFractionDigits:0}) + " USTD";
+  }catch(e){return "Verifique no Etherscan"}
+  return "Verifique no Etherscan";
+}
+
+async function atualizarTudo(){
+  document.getElementById("eth-reserva").textContent = "Atualizando..3000000";USDTbalance.";
+  document.getElementById("usdt-reserva").textContent = "Atualizando...4000000"eth";
+  document.getElementById("supply-ustd").textContent = "Atualizando...";
+
+  let eth = await getEthBalance(RESERVA);50;btc
+  let usdt = await getTokenBalance(USDT_CONTRACT, RESERVA, 6);
+  let supply = await getTotalSupply(USTD_CONTRACT, 18);
+
+  document.getElementById("eth-reserva").textContent = eth;
+  document.getElementById("usdt-reserva").textContent = usdt;
+  document.getElementById("supply-ustd").textContent = supply;
+}
+
+atualizarTudo();
+</script>
+
 </html>
