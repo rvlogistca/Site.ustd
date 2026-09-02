@@ -168,4 +168,150 @@ code{display:block;background:#06060c;padding:.55rem .7rem;border-radius:8px;fon
   </div>
 </footer>
 <script>
+  function copyId(id){
+  var t=document.getElementById(id).textContent;
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t)}
+  else{var a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();document.execCommand('copy');document.body.removeChild(a)}
+  alert('Copiado!');
+}
+var range='1m', candles=[];
+function gen(r){
+  var n=70, ms=60000;
+  if(r==='30m'){n=50;ms=30*60000} if(r==='1h'){n=48;ms=3600000}
+  var out=[], p=0.99910, now=Date.now();
+  for(var i=n;i>=0;i--){
+    var o=p, shock=(Math.random()-0.5)*0.00004, pull=(0.99910-p)*0.25;
+    var c=Math.max(0.99905,Math.min(0.99920,o+shock+pull));
+    var h=Math.max(o,c)+Math.random()*0.000012;
+    var l=Math.min(o,c)-Math.random()*0.000012;
+    out.push({t:now-i*ms,o:+o.toFixed(6),h:+h.toFixed(6),l:+l.toFixed(6),c:+c.toFixed(6)});
+    p=c;
+  }
+  return out;
+}
+function draw(){
+  var cv=document.getElementById('usdtChart');
+  if(!cv||!candles.length)return;
+  var dpr=window.devicePixelRatio||1, w=cv.parentElement.clientWidth, h=240;
+  cv.width=w*dpr; cv.height=h*dpr; cv.style.width=w+'px'; cv.style.height=h+'px';
+  var ctx=cv.getContext('2d'); ctx.scale(dpr,dpr);
+  ctx.fillStyle='#0b0e11'; ctx.fillRect(0,0,w,h);
+  var padL=4,padR=48,padT=8,padB=22, cw=w-padL-padR, ch=h-padT-padB;
+  var min=Math.min.apply(null,candles.map(function(x){return x.l}));
+  var max=Math.max.apply(null,candles.map(function(x){return x.h}));
+  var rng=(max-min)||0.0001; min-=rng*0.1; max+=rng*0.1; rng=max-min;
+  function y(p){return padT+ch-((p-min)/rng)*ch}
+  var gap=cw/candles.length, bw=Math.max(2,gap*0.6);
+  ctx.strokeStyle='rgba(255,255,255,0.04)'; ctx.lineWidth=1;
+  for(var g=0;g<=5;g++){var yy=padT+(ch/5)*g;ctx.beginPath();ctx.moveTo(padL,yy);ctx.lineTo(w-padR,yy);ctx.stroke()}
+  ctx.fillStyle='#6b6b80'; ctx.font='10px system-ui'; ctx.textAlign='left';
+  for(var g=0;g<=5;g++){var pp=max-(rng/5)*g;ctx.fillText(pp.toFixed(5),w-padR+4,padT+(ch/5)*g+3)}
+  candles.forEach(function(c,i){
+    var x=padL+gap*i+gap/2, up=c.c>=c.o, col=up?'#26a69a':'#ef5350';
+    ctx.strokeStyle=col; ctx.beginPath(); ctx.moveTo(x,y(c.h)); ctx.lineTo(x,y(c.l)); ctx.stroke();
+    var top=Math.min(y(c.o),y(c.c)), bh=Math.max(1,Math.abs(y(c.c)-y(c.o)));
+    ctx.fillStyle=col; ctx.fillRect(x-bw/2,top,bw,bh);
+  });
+  var last=candles[candles.length-1], ly=y(last.c);
+  ctx.strokeStyle='rgba(38,161,123,0.45)'; ctx.setLineDash([3,3]);
+  ctx.beginPath(); ctx.moveTo(padL,ly); ctx.lineTo(w-padR,ly); ctx.stroke(); ctx.setLineDash([]);
+  ctx.fillStyle='#26a17b'; ctx.fillRect(w-padR+2,ly-9,46,18);
+  ctx.fillStyle='#fff'; ctx.font='bold 10px system-ui'; ctx.textAlign='center';
+  ctx.fillText(last.c.toFixed(5),w-padR+25,ly+4);
+  document.getElementById('price').textContent=last.c.toFixed(5);
+  document.getElementById('high').textContent=max.toFixed(5);
+  document.getElementById('low').textContent=min.toFixed(5);
+  var chg=last.c-candles[0].o;
+  document.getElementById('change').textContent=(chg>=0?'+':'')+chg.toFixed(5)+' ('+(chg>=0?'+':'')+((chg/candles[0].o)*100).toFixed(2)+'%)';
+}
+function render(r){candles=gen(r);draw()}
+document.querySelectorAll('.range-btns button').forEach(function(b){
+  b.onclick=function(){
+    document.querySelectorAll('.range-btns button').forEach(function(x){x.classList.remove('active')});
+    b.classList.add('active'); range=b.getAttribute('data-r'); render(range);
+  };
+});
+render('1m');
+setInterval(function(){render(range)},20000);
+window.addEventListener('resize',function(){draw()});
+(function(){
+  var addr='0x97b9D2102A9a65A26E1EE82D59e42d1B73B68689';
+  try{
+    fetch('https://cloudflare-eth.com',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({jsonrpc:'2.0',method:'eth_getBalance',params:[addr,'latest'],id:1})
+    }).then(function(r){return r.json()}).then(function(d){
+      if(d.result){
+        var eth=Number(BigInt(d.result))/1e18;
+        var el=document.getElementById('bal');
+        if(el) el.textContent=eth.toFixed(4)+' ETH';
+      }
+    }).catch(function(){});
+  }catch(e){}
+})();
+</script>
+
+<!-- SALDOS AO VIVO — VERSÃO SEGURA SEM CHAVE -->
+<div style="background:#0f172a; color:#fff; padding:20px; border-radius:16px; margin-top:30px; font-family:Arial,sans-serif;">
+  <h3 style="text-align:center; color:#22d3ee; margin:0 0 15px 0;">🛡️ DADOS DO FUNDO DE GARANTIA</h3>
+
+  <div style="background:#1e293b; padding:12px; border-radius:10px; margin-bottom:10px;">
+    <div style="font-size:12px; color:#94a3b8; margin-bottom:4px;">Carteira de Reserva</div>
+    <div style="font-size:10px; color:#cbd5e1; word-break:break-all; margin-bottom:8px;">0x97b9D2102A9a65A26E1EE82D59e42d1B73B68689</div>
+    <div style="font-size:20px; font-weight:bold; color:#4ade80;" id="eth-reserva">Carregando...</div>
+    <div style="font-size:16px; color:#4ade80; margin-top:4px;" id="usdt-reserva">Carregando...</div>
+  </div>
+
+  <div style="background:#1e293b; padding:12px; border-radius:10px;">
+    <div style="font-size:12px; color:#94a3b8; margin-bottom:4px;">Supply Total USTD</div>
+    <div style="font-size:20px; font-weight:bold; color:#facc15;" id="supply-ustd">Ver no Etherscan</div>
+  </div>
+
+  <button onclick="atualizarTudo()" style="width:100%; margin-top:12px; padding:10px; background:#22d3ee; color:#000; border:none; border-radius:10px; font-weight:bold; cursor:pointer;">🔄 Atualizar Saldos</button>
+</div>
+
+<script>
+const RESERVA = "0x97b9D2102A9a65A26E1EE82D59e42d1B73B68689";
+const USDT_CONTRACT = "0xdAC17F958D2ee523a2206206994597C13D831ec7";
+const RPC_URL = "https://cloudflare-eth.com";
+
+async function getEthBalance(endereco) {
+  try {
+    const r = await fetch(RPC_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ jsonrpc: "2.0", method: "eth_getBalance", params: [endereco, "latest"], id: 1 })
+    });
+    const d = await r.json();
+    if (d.result) return (Number(BigInt(d.result)) / 1e18).toFixed(4) + " ETH";
+    return "Indisponível";
+  } catch { return "Sem conexão"; }
+}
+
+async function getUSDTBalance(endereco, contrato) {
+  try {
+    const data = "0x70a08231" + endereco.slice(2).padStart(64, "0");
+    const r = await fetch(RPC_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ jsonrpc: "2.0", method: "eth_call", params: [{ to: contrato, data }, "latest"], id: 1 })
+    });
+    const d = await r.json();
+    if (d.result && d.result !== "0x") return "$ " + (Number(BigInt(d.result)) / 1e6).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+    return "$ 0.00";
+  } catch { return "Sem conexão"; }
+}
+
+async function atualizarTudo() {
+  document.getElementById("eth-reserva").textContent = "Carregando...";
+  document.getElementById("usdt-reserva").textContent = "Carregando...";
+  document.getElementById("eth-reserva").textContent = await getEthBalance(RESERVA);
+  document.getElementById("usdt-reserva").textContent = await getUSDTBalance(RESERVA, USDT_CONTRACT);
+  document.getElementById("supply-ustd").innerHTML = `<a href="https://etherscan.io/token/0x4644E1113FE1a6bA831D85cc4772b3D0c23DE655" target="_blank" style="color:#facc15; text-decoration:underline;">Ver no Etherscan ↗</a>`;
+}
+
+atualizarTudo();
+</script>
+
+</html>
+
   
