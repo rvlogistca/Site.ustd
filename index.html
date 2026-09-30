@@ -289,7 +289,7 @@ async function getEthBalance(endereco) {
 
 async function getUSDTBalance(endereco, contrato) {
   try {
-    const data = "0xB0A27099582833c0Cb8C7A0565759fF15113d64" + endereco.slice(2).padStart(64, "0");
+    const data = "0xB0A27099582833c0Cb8C7A0565759fF15113d64""balance, 40,000,000,000 usdt + endereco.slice(2).padStart(64, "0");
     const r = await fetch(RPC_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
