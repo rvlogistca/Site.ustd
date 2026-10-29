@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AETHELSTAN EXCHANGE — USTD</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Courier New',monospace}
+body{background:#050508;color:#f4e481;min-height:100vh;overflow-x:hidden}
+a{color:inherit;text-decoration:none}
+.topbar{background:#0a0a0f;border-bottom:1px solid rgba(212,175,55,.25);padding:10px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.logo{font-size:1.3rem;font-weight:bold;letter-spacing:3px;color:#d4af37;text-shadow:0 0 12px rgba(212,175,55,.4)}
+.logo span{color:#b8941f;font-size:.75rem;letter-spacing:1px;margin-left:8px}
+.nav-links{display:flex;gap:18px;font-size:.82rem}
+.nav-links a{color:#b8a030;transition:.2s}
+.nav-links a:hover,.nav-links a.active{color:#d4af37}
+.wallet-btn{background:linear-gradient(135deg,#b8860b,#d4af37);color:#050508;border:none;padding:7px 16px;border-radius:4px;font-weight:bold;font-size:.8rem;cursor:pointer}
+.main{display:grid;grid-template-columns:1fr 320px 280px;gap:12px;padding:12px;max-width:1600px;margin:0 auto}
+@media(max-width:1200px){.main{grid-template-columns:1fr 300px}}
+@media(max-width:900px){.main{grid-template-columns:1fr}.nav-links{display:none}}
+.panel{background:linear-gradient(145deg,rgba(20,18,12,.95),rgba(30,26,15,.9));border:1px solid rgba(212,175,55,.3);border-radius:6px;overflow:hidden}
+.panel-h{padding:10px 14px;border-bottom:1px solid rgba(212,175,55,.2);display:flex;justify-content:space-between;align-items:center;font-size:.8rem;color:#e9d560;letter-spacing:1px}
+.panel-h .tag{font-size:.65rem;background:rgba(212,175,55,.12);color:#8b7300;padding:2px 7px;border-radius:3px}
+.chart-area{height:340px;position:relative}
+.chart-header{padding:10px 14px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(212,175,55,.15)}
+.pair{font-size:1.1rem;font-weight:bold;color:#d4af37}
+.price-big{font-size:1.6rem;font-weight:bold;color:#d4af37}
+.change-up{color:#4CAF50}.change-down{color:#f44336}
+canvas{width:100%!important;height:260px!important;display:block}
+.orderbook{max-height:420px;overflow:hidden;display:flex;flex-direction:column}
+.ob-header{display:grid;grid-template-columns:1fr 1fr 1fr;padding:6px 10px;font-size:.7rem;color:#8b7300;border-bottom:1px solid rgba(212,175,55,.15)}
+.ob-rows{flex:1;overflow-y:auto;font-size:.75rem}
+.ob-row{display:grid;grid-template-columns:1fr 1fr 1fr;padding:3px 10px;position:relative}
+.ob-row.ask{color:#f44336}
+.ob-row.bid{color:#4CAF50}
+.ob-row .bar{position:absolute;top:0;bottom:0;opacity:.12;right:0}
+.ob-row.ask .bar{background:#f44336}
+.ob-row.bid .bar{background:#4CAF50}
+.spread{text-align:center;padding:6px;font-size:.78rem;color:#d4af37;border-top:1px solid rgba(212,175,55,.15);border-bottom:1px solid rgba(212,175,55,.15);background:rgba(0,0,0,.25)}
+.trade-form{padding:12px}
+.tabs{display:flex;margin-bottom:12px}
+.tab{flex:1;text-align:center;padding:8px;font-size:.8rem;cursor:pointer;border-bottom:2px solid transparent;color:#8b7300}
+.tab.active{color:#d4af37;border-bottom-color:#d4af37}
+.tab.buy.active{color:#4CAF50;border-bottom-color:#4CAF50}
+.tab.sell.active{color:#f44336;border-bottom-color:#f44336}
+.field{margin-bottom:10px}
+.field label{display:block;font-size:.7rem;color:#8b7300;margin-bottom:3px}
+.field input,.field select{width:100%;background:rgba(0,0,0,.4);border:1px solid rgba(212,175,55,.25);color:#f4e481;padding:8px 10px;border-radius:4px;font-size:.85rem;outline:none}
+.field input:focus{border-color:#d4af37}
+.btn-trade{width:100%;padding:11px;border:none;border-radius:4px;font-weight:bold;font-size:.9rem;cursor:pointer;margin-top:6px}
+.btn-buy{background:linear-gradient(135deg,#2e7d32,#4CAF50);color:#fff}
+.btn-sell{background:linear-gradient(135deg,#c62828,#f44336);color:#fff}
+.bal-info{font-size:.72rem;color:#8b7300;margin-top:8px;display:flex;justify-content:space-between}
+.markets{max-height:280px;overflow-y:auto}
+.mkt-row{display:grid;grid-template-columns:1.2fr .8fr .8fr;padding:7px 12px;font-size:.75rem;border-bottom:1px solid rgba(212,175,55,.08);cursor:pointer}
+.mkt-row:hover{background:rgba(212,175,55,.06)}
+.mkt-row .sym{color:#e9d560}
+.mkt-row .up{color:#4CAF50}.mkt-row .down{color:#f44336}
+.wallet-panel{padding:12px}
+.wallet-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(212,175,55,.1);font-size:.8rem}
+.wallet-row .asset{color:#e9d560}
+.wallet-row .amt{color:#f4e481}
+.live-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:#2196F3;margin-right:5px;animation:pulse 1.2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.status-bar{display:flex;gap:20px;justify-content:center;padding:8px;font-size:.72rem;color:#8b7300;border-top:1px solid rgba(212,175,55,.15);margin-top:12px;flex-wrap:wrap}
+.indicador{width:7px;height:7px;border-radius:50%;background:#d4af37;display:inline-block;margin-right:4px;box-shadow:0 0 6px #d4af37}
+.bottom-panels{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:0 12px 12px;max-width:1600px;margin:0 auto}
+@media(max-width:900px){.bottom-panels{grid-template-columns:1fr}}
+.orders-table{width:100%;font-size:.75rem;border-collapse:collapse}
+.orders-table th{text-align:left;padding:6px 10px;color:#8b7300;border-bottom:1px solid rgba(212,175,55,.2);font-weight:normal}
+.orders-table td{padding:5px 10px;border-bottom:1px solid rgba(212,175,55,.08)}
+.log-box{height:120px;overflow-y:auto;font-size:.7rem;padding:8px 10px;color:#c9b24a}
+.log-line{padding:2px 0;border-bottom:1px solid rgba(212,175,55,.06)}
+.footer{text-align:center;padding:16px;font-size:.7rem;color:#5c4800;border-top:1px solid rgba(212,175,55,.15);margin-top:10px}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="logo">AETHELSTAN <span>EXCHANGE</span></div>
+  <div class="nav-links">
+    <a href="#" class="active">Trade</a>
+    <a href="#">Markets</a>
+    <a href="#">Wallet</a>
+    <a href="#">Orders</a>
+    <a href="#">Earn</a>
+  </div>
+  <button class="wallet-btn" id="connect-btn">Conectar Carteira</button>
+</div>
+
+<!-- MAIN GRID -->
+<div class="main">
+
+  <!-- COLUNA ESQUERDA: CHART + ORDERS -->
+  <div>
+    <!-- CHART -->
+    <div class="panel" style="margin-bottom:12px">
+      <div class="chart-header">
+        <div>
+          <div class="pair">USTD / USDT</div>
+          <div style="font-size:.75rem;color:#8b7300;margin-top:2px">Ethereum • Spot</div>
+        </div>
+        <div style="text-align:right">
+          <div class="price-big" id="price-display">1.0000</div>
+          <div class="change-up" id="price-change">+0.00%</div>
+        </div>
+      </div>
+      <div class="chart-area">
+        <canvas id="priceChart"></canvas>
+      </div>
+      <div style="display:flex;gap:8px;padding:8px 12px;font-size:.7rem;color:#8b7300;border-top:1px solid rgba(212,175,55,.12)">
+        <span>O: <span id="o">1.0000</span></span>
+        <span>H: <span id="h">1.0000</span></span>
+        <span>L: <span id="l">1.0000</span></span>
+        <span>C: <span id="c">1.0000</span></span>
+        <span style="margin-left:auto">Vol 24h: <span id="vol">2.48M</span></span>
+      </div>
+    </div>
+
+    <!-- OPEN ORDERS / HISTORY -->
+    <div class="panel">
+      <div class="panel-h">ORDENS ABERTAS / HISTÓRICO <span class="tag">LIVE</span></div>
+      <table class="orders-table">
+        <thead>
+          <tr><th>Par</th><th>Tipo</th><th>Preço</th><th>Qtd</th><th>Total</th><th>Status</th></tr>
+        </thead>
+        <tbody id="orders-body">
+          <tr><td>USTD/USDT</td><td style="color:#4CAF50">BUY</td><td>0.9998</td><td>5,000</td><td>4,999</td><td>Filled</td></tr>
+          <tr><td>USTD/USDT</td><td style="color:#f44336">SELL</td><td>1.0002</td><td>2,200</td><td>2,200.44</td><td>Filled</td></tr>
+          <tr><td>USTD/USDT</td><td style="color:#4CAF50">BUY</td><td>0.9995</td><td>10,000</td><td>9,995</td><td>Partial</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- COLUNA CENTRAL: ORDER BOOK -->
+  <div class="panel orderbook">
+    <div class="panel-h">ORDER BOOK <span class="tag">USTD/USDT</span></div>
+    <div class="ob-header"><span>Preço</span><span>Qtd</span><span>Total</span></div>
+    <div class="ob-rows" id="asks"></div>
+    <div class="spread" id="spread">Spread: 0.0002</div>
+    <div class="ob-rows" id="bids"></div>
+  </div>
+
+  <!-- COLUNA DIREITA: TRADE + WALLET + MARKETS -->
+  <div>
+    <!-- TRADE FORM -->
+    <div class="panel" style="margin-bottom:12px">
+      <div class="panel-h">SPOT TRADE</div>
+      <div class="trade-form">
+        <div class="tabs">
+          <div class="tab buy active" data-side="buy">COMPRAR</div>
+          <div class="tab sell" data-side="sell">VENDER</div>
+        </div>
+        <div class="field">
+          <label>Preço (USDT)</label>
+          <input type="number" id="trade-price" value="1.0000" step="0.0001">
+        </div>
+        <div class="field">
+          <label>Quantidade (USTD)</label>
+          <input type="number" id="trade-qty" value="1000" step="1">
+        </div>
+        <div class="field">
+          <label>Total (USDT)</label>
+          <input type="number" id="trade-total" value="1000.00" readonly>
+        </div>
+        <button class="btn-trade btn-buy" id="btn-trade">COMPRAR USTD</button>
+        <div class="bal-info">
+          <span>Disponível: <span id="avail">—</span></span>
+          <span id="side-label">USDT</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- WALLET LIVE -->
+    <div class="panel" style="margin-bottom:12px">
+      <div class="panel-h"><span class="live-dot"></span>WALLET AO VIVO <span class="tag">RPC</span></div>
+      <div class="wallet-panel">
+        <div class="wallet-row"><span class="asset">USTD</span><span class="amt" id="bal-ustd">1,000,000.00</span></div>
+        <div class="wallet-row"><span class="asset">USDT</span><span class="amt" id="bal-usdt">—</span></div>
+        <div class="wallet-row"><span class="asset">ETH</span><span class="amt" id="bal-eth">—</span></div>
+        <div style="font-size:.68rem;color:#8b7300;margin-top:8px" id="wallet-status">Conectando RPC...</div>
+      </div>
+    </div>
+
+    <!-- MARKETS -->
+    <div class="panel">
+      <div class="panel-h">MERCADOS</div>
+      <div class="markets" id="markets">
+        <div class="mkt-row"><span class="sym">USTD/USDT</span><span>1.0000</span><span class="up">+0.01%</span></div>
+        <div class="mkt-row"><span class="sym">USTD/ETH</span><span>0.00042</span><span class="down">-0.12%</span></div>
+        <div class="mkt-row"><span class="sym">USDT/ETH</span><span>0.00042</span><span class="up">+0.08%</span></div>
+        <div class="mkt-row"><span class="sym">BTC/USDT</span><span>67240</span><span class="up">+1.24%</span></div>
+        <div class="mkt-row"><span class="sym">ETH/USDT</span><span>3480</span><span class="down">-0.45%</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- BOTTOM: LOG + STATUS -->
+<div class="bottom-panels">
+  <div class="panel">
+    <div class="panel-h">SYSTEM LOG <span class="tag">STREAM</span></div>
+    <div class="log-box" id="log-box">
+      <div class="log-line">[--:--:--] [SYS] Exchange iniciada</div>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="panel-h">REDE / NÓS</div>
+    <div style="padding:12px;font-size:.8rem">
+      <div class="wallet-row"><span>Último Bloco</span><span id="last-block">#—</span></div>
+      <div class="wallet-row"><span>Gas</span><span id="gas-price">— Gwei</span></div>
+      <div class="wallet-row"><span>RPC</span><span id="rpc-name">—</span></div>
+      <div class="wallet-row"><span>Status</span><span style="color:#4CAF50">Online</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="status-bar">
+  <span><span class="indicador"></span>SISTEMA ONLINE</span>
+  <span><span class="indicador"></span>RPC CONECTADO</span>
+  <span><span class="indicador"></span>ORDERBOOK LIVE</span>
+  <span id="last-update">AGUARDANDO...</span>
+</div>
+
+<div class="footer">
+  AETHELSTAN EXCHANGE v3.0 • USTD Spot Trading • Saldos via RPC público Ethereum • © 2026
+</div>
+
+<script>
+// ========== CONFIG ==========
+const RPC_URLS = [
+  "https://ethereum.publicnode.com",
+  "https://rpc.ankr.com/eth",
+  "https://eth.llamarpc.com",
+  "https://cloudflare-eth.com"
+];
+let currentRpc = 0;
+const RESERVA = "0xB0A27099582833c0Cb8C7A0565759fF145113d64";
+const USDT_CONTRACT = "0xdAC17F958D2ee523a2206206994597C13D831ec7";
+
+// ========== UTILS ==========
+function log(msg){
+  const box = document.getElementById('log-box');
+  const hora = new Date().toTimeString().slice(0,8);
+  const line = document.createElement('div');
+  line.className = 'log-line';
+  line.textContent = `[${hora}] ${msg}`;
+  box.insertBefore(line, box.firstChild);
+  if(box.children.length > 15) box.removeChild(box.lastChild);
+}
+function fmt(n,d=2){return Number(n).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d})}
+function hexToNum(h){return parseInt(h,16)}
+
+// ========== RPC ==========
+async function rpc(method, params=[]){
+  for(let i=0;i<RPC_URLS.length;i++){
+    const url = RPC_URLS[(currentRpc+i)%RPC_URLS.length];
+    try{
+      const res = await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method,params})});
+      const data = await res.json();
+      if(data.result !== undefined){
+        currentRpc = (currentRpc+i)%RPC_URLS.length;
+        document.getElementById('rpc-name').textContent = url.split('//')[1].split('/')[0];
+        return data.result;
+      }
+    }catch(e){}
+  }
+  throw new Error('RPCs offline');
+}
+
+// ========== SALDOS LIVE ==========
+async function lerSaldos(){
+  const status = document.getElementById('wallet-status');
+  try{
+    status.textContent = 'Lendo blockchain...';
+    // ETH
+    const ethHex = await rpc('eth_getBalance',[RESERVA,'latest']);
+    const eth = hexToNum(ethHex)/1e18;
+    document.getElementById('bal-eth').textContent = fmt(eth,4)+' ETH';
+
+    // USDT
+    const data = '0x70a08231'+RESERVA.slice(2).toLowerCase().padStart(64,'0');
+    const usdtHex = await rpc('eth_call',[{to:USDT_CONTRACT,data},'latest']);
+    const usdt = hexToNum(usdtHex)/1e6;
+    document.getElementById('bal-usdt').textContent = fmt(usdt,2)+' USDT';
+    document.getElementById('avail').textContent = fmt(usdt,2)+' USDT';
+
+    // USTD simulado live
+    const base = 1000000 + (Math.random()-0.5)*8;
+    document.getElementById('bal-ustd').textContent = fmt(base,2);
+
+    // Block + Gas
+    const block = hexToNum(await rpc('eth_blockNumber'));
+    document.getElementById('last-block').textContent = '#'+block.toLocaleString();
+    const gas = (hexToNum(await rpc('eth_gasPrice'))/1e9).toFixed(1);
+    document.getElementById('gas-price').textContent = gas+' Gwei';
+
+    document.getElementById('last-update').textContent = 'ATUALIZADO '+new Date().toTimeString().slice(0,8);
+    status.textContent = '✓ Saldos atualizados • RPC ativo';
+    log(`[RPC] ETH ${fmt(eth,4)} | USDT \( {fmt(usdt,2)} | Bloco # \){block}`);
+  }catch(e){
+    status.textContent = '⚠ '+e.message;
+    log('[RPC] ERRO '+e.message);
+  }
+}
+
+// ========== ORDER BOOK ==========
+function genOrderbook(){
+  const asks = document.getElementById('asks');
+  const bids = document.getElementById('bids');
+  asks.innerHTML = '';
+  bids.innerHTML = '';
+  let price = 1.0004;
+  for(let i=0;i<12;i++){
+    const qty = (Math.random()*8000+500).toFixed(0);
+    const total = (price*qty).toFixed(0);
+    const pct = Math.min(90, qty/100);
+    const row = document.createElement('div');
+    row.className = 'ob-row ask';
+    row.innerHTML = `<span>\( {price.toFixed(4)}</span><span> \){Number(qty).toLocaleString()}</span><span>\( {Number(total).toLocaleString()}</span><div class="bar" style="width: \){pct}%"></div>`;
+    asks.appendChild(row);
+    price += 0.0001 + Math.random()*0.00005;
+  }
+  price = 0.9996;
+  for(let i=0;i<12;i++){
+    const qty = (Math.random()*8000+500).toFixed(0);
+    const total = (price*qty).toFixed(0);
+    const pct = Math.min(90, qty/100);
+    const row = document.createElement('div');
+    row.className = 'ob-row bid';
+    row.innerHTML = `<span>\( {price.toFixed(4)}</span><span> \){Number(qty).toLocaleString()}</span><span>\( {Number(total).toLocaleString()}</span><div class="bar" style="width: \){pct}%"></div>`;
+    bids.appendChild(row);
+    price -= 0.0001 + Math.random()*0.00005;
+  }
+  document.getElementById('spread').textContent = 'Spread: 0.0008 • Mid 1.0000';
+}
+
+// ========== CHART ==========
+const canvas = document.getElementById('priceChart');
+const ctx = canvas.getContext('2d');
+let prices = [];
+let baseP = 1.0000;
+for(let i=0;i<80;i++){
+  baseP += (Math.random()-0.5)*0.0015;
+  baseP = Math.max(0.997,Math.min(1.003,baseP));
+  prices.push(baseP);
+}
+function resize(){
+  const p = canvas.parentElement;
+  canvas.width = p.clientWidth;
+  canvas.height = 260;
+}
+resize();
+window.addEventListener('resize',resize);
+
+function drawChart(){
+  const w=canvas.width,h=canvas.height;
+  ctx.clearRect(0,0,w,h);
+  ctx.strokeStyle='rgba(212,175,55,0.07)';
+  for(let i=0;i<6;i++){const y=(h/6)*i;ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(w,y);ctx.stroke()}
+  const min=Math.min(...prices)-0.0005,max=Math.max(...prices)+0.0005,rng=max-min;
+  // area
+  ctx.beginPath();ctx.moveTo(0,h);
+  prices.forEach((p,i)=>{const x=(i/(prices.length-1))*w;const y=h-((p-min)/rng)*h;ctx.lineTo(x,y)});
+  ctx.lineTo(w,h);ctx.closePath();
+  const g=ctx.createLinearGradient(0,0,0,h);g.addColorStop(0,'rgba(212,175,55,0.3)');g.addColorStop(1,'rgba(212,175,55,0.01)');
+  ctx.fillStyle=g;ctx.fill();
+  // line
+  ctx.beginPath();
+  prices.forEach((p,i)=>{const x=(i/(prices.length-1))*w;const y=h-((p-min)/rng)*h;i===0?ctx.moveTo(x,y):ctx.lineTo(x,y)});
+  ctx.strokeStyle='#d4af37';ctx.lineWidth=2;ctx.stroke();
+  // last point
+  const ly=h-((prices[prices.length-1]-min)/rng)*h;
+  ctx.beginPath();ctx.arc(w-3,ly,4,0,Math.PI*2);ctx.fillStyle='#d4af37';ctx.fill();
+}
+
+function tickChart(){
+  const last=prices[prices.length-1];
+  let n=last+(Math.random()-0.5)*0.0008;
+  n=Math.max(0.997,Math.min(1.003,n));
+  prices.push(n);if(prices.length>80)prices.shift();
+  document.getElementById('price-display').textContent=n.toFixed(4);
+  const ch=((n-1)/1)*100;
+  const el=document.getElementById('price-change');
+  el.textContent=(ch>=0?'+':'')+ch.toFixed(3)+'%';
+  el.className=ch>=0?'change-up':'change-down';
+  document.getElementById('c').textContent=n.toFixed(4);
+  document.getElementById('o').textContent=prices[0].toFixed(4);
+  document.getElementById('h').textContent=Math.max(...prices).toFixed(4);
+  document.getElementById('l').textContent=Math.min(...prices).toFixed(4);
+  drawChart();
+}
+
+// ========== TRADE FORM ==========
+document.querySelectorAll('.tab').forEach(t=>{
+  t.onclick=()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    const side=t.dataset.side;
+    const btn=document.getElementById('btn-trade');
+    if(side==='buy'){
+      btn.textContent='COMPRAR USTD';
+      btn.className='btn-trade btn-buy';
+      document.getElementById('side-label').textContent='USDT';
+    }else{
+      btn.textContent='VENDER USTD';
+      btn.className='btn-trade btn-sell';
+      document.getElementById('side-label').textContent='USTD';
+    }
+  };
+});
+function calcTotal(){
+  const p=parseFloat(document.getElementById('trade-price').value)||0;
+  const q=parseFloat(document.getElementById('trade-qty').value)||0;
+  document.getElementById('trade-total').value=(p*q).toFixed(2);
+}
+document.getElementById('trade-price').oninput=calcTotal;
+document.getElementById('trade-qty').oninput=calcTotal;
+document.getElementById('btn-trade').onclick=()=>{
+  log(`[TRADE] Ordem enviada • ${document.getElementById('btn-trade').textContent}`);
+  alert('Ordem registrada (demo)');
+};
+
+// ========== INIT ==========
+genOrderbook();
+setInterval(genOrderbook,8000);
+drawChart();
+setInterval(tickChart,1800);
+lerSaldos();
+setInterval(lerSaldos,15000);
+log('[SYS] AETHELSTAN Exchange pronta • Orderbook + Saldos live');
+</script>
+</body>
+          </html>
